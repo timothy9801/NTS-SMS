@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: nts
+      POSTGRES_USER: nts
+      POSTGRES_PASSWORD: nts
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nts -d nts"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    volumes:
+      - ../..:/workspaces:cached
+    # Keeps container alive — Codespaces manages the actual processes
+    command: sleep infinity
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://nts:nts@db:5432/nts
+      DJANGO_SECRET_KEY: dev-secret-change-in-production-please
+      DJANGO_DEBUG: "True"
+    ports:
+      - "8000:8000"
+
+volumes:
+  postgres_data:
